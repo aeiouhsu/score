@@ -1,0 +1,136 @@
+<!-- 二代版本程式碼 -->
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SH Talks 二代</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .rating-group { background: #fff; padding:1.5rem; border-radius:.75rem; box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1); margin-bottom:1.5rem; }
+        .rating-label { font-size:1.125rem; font-weight:600; color:#1f2937; margin-bottom:.5rem; display:flex; justify-content: space-between; align-items: center; }
+        .category-score { font-size:1rem; font-weight:500; color:#10b981; }
+        .rating-description { font-size:.875rem; color:#4b5563; margin-bottom:1rem; }
+        .criteria-list { font-size:.875rem; color:#374151; padding-left:1rem; border-left:2px solid #e5e7eb; }
+        .criteria-list p { display:flex; align-items:center; margin-bottom:.75rem; }
+        .criteria-btn { margin-right:.5rem; padding:.25rem .75rem; border:1px solid #d1d5db; border-radius:.25rem; background:#f3f4f6; cursor:pointer; transition: background .2s, color .2s, border-color .2s; }
+        .criteria-btn:hover { background:#e5e7eb; }
+        .criteria-btn.active { background:#3b82f6; color:#fff; border-color:#3b82f6; }
+        .total-score-section { padding:1rem; background:#e5f6ec; border-radius:.75rem; text-align:center; font-size:1.25rem; font-weight:700; color:#065f46; }
+    </style>
+</head>
+<body class="bg-slate-100 p-4 md:p-8 flex flex-col items-center justify-center min-h-screen">
+  <div class="w-full max-w-2xl mx-auto">
+    <header class="text-center mb-8">
+      <h1 class="text-3xl md:text-4xl font-bold text-slate-700">SH Talks 二代</h1>
+      <p class="text-slate-500 mt-2">請針對演說者的各個面向給予評分，總分會即時更新。</p>
+    </header>
+    <form id="ratingForm">
+      <!-- A 類別 -->
+      <div class="rating-group" data-cat="A">
+        <label class="rating-label">
+          <span>A. 眼神、手勢與互動</span>
+          <span class="category-score" id="score-A">0分</span>
+        </label>
+        <p class="rating-description">評估眼神交流、自信度、手勢自然度，及與觀眾互動程度。</p>
+        <div class="criteria-list">
+          <p data-score="5"><button type="button" class="criteria-btn">5分</button>眼神自信、誠懇，掃視全場；手勢精準、有感染力，互動熱絡自然。</p>
+          <p data-score="4"><button type="button" class="criteria-btn">4分</button>大部分觀眾良好眼神接觸，手勢自然，與觀眾互動。</p>
+          <p data-score="3"><button type="button" class="criteria-btn">3分</button>基本眼神交流，手勢尚可，連結感較弱。</p>
+          <p data-score="2"><button type="button" class="criteria-btn">2分</button>眼神飄忽，不自然手勢，互動有限。</p>
+          <p data-score="1"><button type="button" class="criteria-btn">1分</button>無眼神交流，肢體僵硬，無互動。</p>
+        </div>
+      </div>
+      <!-- B 類別 -->
+      <div class="rating-group" data-cat="B">
+        <label class="rating-label">
+          <span>B. 音量與音調</span>
+          <span class="category-score" id="score-B">0分</span>
+        </label>
+        <p class="rating-description">評估音量清晰度及音調變化，是否吸引並傳達情感。</p>
+        <div class="criteria-list">
+          <p data-score="5"><button type="button" class="criteria-btn">5分</button>音量收放自如，音調富有表現力，極具吸引力。</p>
+          <p data-score="4"><button type="button" class="criteria-btn">4分</button>音量控制得宜，音調帶有情感，引人注意。</p>
+          <p data-score="3"><button type="button" class="criteria-btn">3分</button>音量適中，音調起伏少，情感表達較弱。</p>
+          <p data-score="2"><button type="button" class="criteria-btn">2分</button>音量不穩，音調平淡，略顯單調。</p>
+          <p data-score="1"><button type="button" class="criteria-btn">1分</button>音量過小或過大，無音調變化，難以聆聽。</p>
+        </div>
+      </div>
+      <!-- C 類別 -->
+      <div class="rating-group" data-cat="C">
+        <label class="rating-label">
+          <span>C. 口語表達</span>
+          <span class="category-score" id="score-C">0分</span>
+        </label>
+        <p class="rating-description">評估發音清晰度、用詞精確度及流暢度。</p>
+        <div class="criteria-list">
+          <p data-score="5"><button type="button" class="criteria-btn">5分</button>遣詞精準、語言組織強，表達說服力強。</p>
+          <p data-score="4"><button type="button" class="criteria-btn">4分</button>用詞準確，語句流暢，邏輯清晰。</p>
+          <p data-score="3"><button type="button" class="criteria-btn">3分</button>表達清晰，但較平實。</p>
+          <p data-score="2"><button type="button" class="criteria-btn">2分</button>用詞不夠精確，偶有贅詞。</p>
+          <p data-score="1"><button type="button" class="criteria-btn">1分</button>表達不清，多次停頓或語無倫次。</p>
+        </div>
+      </div>
+      <!-- D 類別 -->
+      <div class="rating-group" data-cat="D">
+        <label class="rating-label">
+          <span>D. 演說內容</span>
+          <span class="category-score" id="score-D">0分</span>
+        </label>
+        <p class="rating-description">評估內容結構、邏輯及啟發性與實用性。</p>
+        <div class="criteria-list">
+          <p data-score="5"><button type="button" class="criteria-btn">5分</button>深度高、結構嚴謹，觀點新穎。</p>
+          <p data-score="4"><button type="button" class="criteria-btn">4分</button>內容充實，邏輯清晰，有思考價值。</p>
+          <p data-score="3"><button type="button" class="criteria-btn">3分</button>主題明確，深度一般。</p>
+          <p data-score="2"><button type="button" class="criteria-btn">2分</button>結構鬆散，深度不足。</p>
+          <p data-score="1"><button type="button" class="criteria-btn">1分</button>內容空洞，缺乏重點。</p>
+        </div>
+      </div>
+      <!-- E 類別 -->
+      <div class="rating-group" data-cat="E">
+        <label class="rating-label">
+          <span>E. 簡報設計</span>
+          <span class="category-score" id="score-E">0分</span>
+        </label>
+        <p class="rating-description">評估視覺美觀度、排版與圖文搭配。</p>
+        <div class="criteria-list">
+          <p data-score="5"><button type="button" class="criteria-btn">5分</button>專業創意，強化內容。完美掌握KFC元素，完美地強化了演說內容。</p>
+          <p data-score="4"><button type="button" class="criteria-btn">4分</button>清晰美觀，有效輔助。掌握KFC元素，有效輔助內容理解。</p>
+          <p data-score="3"><button type="button" class="criteria-btn">3分</button>版面乾淨，設計一般。大致掌握KFC元素，能傳達基本資訊。</p>
+          <p data-score="2"><button type="button" class="criteria-btn">2分</button>較單調，重點不突出。較未能掌握KFC元素，視覺輔助效果有限。</p>
+          <p data-score="1"><button type="button" class="criteria-btn">1分</button>混亂，難以閱讀。無法掌握KFC元素，難以閱讀。</p>
+        </div>
+      </div>
+    </form>
+    <div class="total-score-section">
+      總分：<span id="totalScore">0</span> / 25
+    </div>
+  </div>
+  <script>
+    const categories = ['A','B','C','D','E'];
+    function updateCategory(cat, val) {
+      document.getElementById(`score-${cat}`).textContent = val + '分';
+      updateTotal();
+    }
+    function updateTotal() {
+      let total = 0;
+      categories.forEach(cat => {
+        const text = document.getElementById(`score-${cat}`).textContent;
+        total += parseInt(text) || 0;
+      });
+      document.getElementById('totalScore').textContent = total;
+    }
+    document.querySelectorAll('.criteria-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const p = btn.closest('p');
+        const cat = p.closest('.rating-group').dataset.cat;
+        const score = p.getAttribute('data-score');
+        p.parentNode.querySelectorAll('.criteria-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        updateCategory(cat, score);
+      });
+    });
+  </script>
+</body>
+</html>
