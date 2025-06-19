@@ -1,136 +1,510 @@
-<!-- 二代版本程式碼 -->
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SH Talks 二代</title>
+    <title>觀眾評分程式 v4 (動態連結)</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .rating-group { background: #fff; padding:1.5rem; border-radius:.75rem; box-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1); margin-bottom:1.5rem; }
-        .rating-label { font-size:1.125rem; font-weight:600; color:#1f2937; margin-bottom:.5rem; display:flex; justify-content: space-between; align-items: center; }
-        .category-score { font-size:1rem; font-weight:500; color:#10b981; }
-        .rating-description { font-size:.875rem; color:#4b5563; margin-bottom:1rem; }
-        .criteria-list { font-size:.875rem; color:#374151; padding-left:1rem; border-left:2px solid #e5e7eb; }
-        .criteria-list p { display:flex; align-items:center; margin-bottom:.75rem; }
-        .criteria-btn { margin-right:.5rem; padding:.25rem .75rem; border:1px solid #d1d5db; border-radius:.25rem; background:#f3f4f6; cursor:pointer; transition: background .2s, color .2s, border-color .2s; }
-        .criteria-btn:hover { background:#e5e7eb; }
-        .criteria-btn.active { background:#3b82f6; color:#fff; border-color:#3b82f6; }
-        .total-score-section { padding:1rem; background:#e5f6ec; border-radius:.75rem; text-align:center; font-size:1.25rem; font-weight:700; color:#065f46; }
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .form-select {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+        .hidden {
+            display: none;
+        }
+        .card {
+            background-color: #ffffff;
+            padding: 1.5rem;
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            margin-bottom: 1.5rem;
+        }
+        .button-primary {
+             background-color: #3b82f6; /* blue-500 */
+             color: white;
+             font-weight: 600;
+             padding: 0.6rem 1.5rem;
+             border-radius: 0.5rem;
+             cursor: pointer;
+             transition: background-color 0.2s;
+             border: none;
+        }
+        .button-primary:hover {
+            background-color: #2563eb; /* blue-600 */
+        }
+        .button-submit {
+             background-color: #10b981; /* emerald-500 */
+             color: white;
+             font-weight: 600;
+             padding: 0.75rem 1.5rem;
+             border-radius: 0.5rem;
+             cursor: pointer;
+             transition: background-color 0.2s;
+             border: none;
+             display: block;
+             width: 100%;
+             max-width: 300px;
+             margin: 1.5rem auto 0;
+        }
+        .button-submit:hover {
+            background-color: #059669; /* emerald-600 */
+        }
+        .score-selected {
+            background-color: #1f2937 !important;
+            color: #ffffff !important;
+            border-color: #1f2937 !important;
+        }
+        .subtotal-badge {
+            background-color: #e5e7eb;
+            color: #1f2937;
+            padding: 0.125rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-left: 0.5rem;
+        }
+        .loader {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
-<body class="bg-slate-100 p-4 md:p-8 flex flex-col items-center justify-center min-h-screen">
-  <div class="w-full max-w-2xl mx-auto">
-    <header class="text-center mb-8">
-      <h1 class="text-3xl md:text-4xl font-bold text-slate-700">SH Talks 二代</h1>
-      <p class="text-slate-500 mt-2">請針對演說者的各個面向給予評分，總分會即時更新。</p>
-    </header>
-    <form id="ratingForm">
-      <!-- A 類別 -->
-      <div class="rating-group" data-cat="A">
-        <label class="rating-label">
-          <span>A. 眼神、手勢與互動</span>
-          <span class="category-score" id="score-A">0分</span>
-        </label>
-        <p class="rating-description">評估眼神交流、自信度、手勢自然度，及與觀眾互動程度。</p>
-        <div class="criteria-list">
-          <p data-score="5"><button type="button" class="criteria-btn">5分</button>眼神自信、誠懇，掃視全場；手勢精準、有感染力，互動熱絡自然。</p>
-          <p data-score="4"><button type="button" class="criteria-btn">4分</button>大部分觀眾良好眼神接觸，手勢自然，與觀眾互動。</p>
-          <p data-score="3"><button type="button" class="criteria-btn">3分</button>基本眼神交流，手勢尚可，連結感較弱。</p>
-          <p data-score="2"><button type="button" class="criteria-btn">2分</button>眼神飄忽，不自然手勢，互動有限。</p>
-          <p data-score="1"><button type="button" class="criteria-btn">1分</button>無眼神交流，肢體僵硬，無互動。</p>
+<body class="bg-slate-100 p-4 md:p-8 min-h-screen flex flex-col items-center justify-center">
+
+    <div class="w-full max-w-2xl mx-auto">
+        <header class="text-center mb-6">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-700">觀眾評分程式 v4</h1>
+        </header>
+        
+        <!-- 網址輸入區塊 -->
+        <div id="urlInputSection" class="card">
+            <h2 class="text-xl font-bold text-slate-800 mb-4">連結受評者名單</h2>
+            <label for="googleSheetURLInput" class="block text-sm font-medium text-gray-700 mb-1">請貼上 Google 表單發佈的 CSV 網址</label>
+            <input type="text" id="googleSheetURLInput" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="https://docs.google.com/spreadsheets/d/e/...">
+            <button onclick="startLoadingData()" class="button-primary w-full md:w-auto mt-4">載入資料</button>
+            <p id="urlError" class="text-red-500 text-sm mt-2 hidden"></p>
         </div>
-      </div>
-      <!-- B 類別 -->
-      <div class="rating-group" data-cat="B">
-        <label class="rating-label">
-          <span>B. 音量與音調</span>
-          <span class="category-score" id="score-B">0分</span>
-        </label>
-        <p class="rating-description">評估音量清晰度及音調變化，是否吸引並傳達情感。</p>
-        <div class="criteria-list">
-          <p data-score="5"><button type="button" class="criteria-btn">5分</button>音量收放自如，音調富有表現力，極具吸引力。</p>
-          <p data-score="4"><button type="button" class="criteria-btn">4分</button>音量控制得宜，音調帶有情感，引人注意。</p>
-          <p data-score="3"><button type="button" class="criteria-btn">3分</button>音量適中，音調起伏少，情感表達較弱。</p>
-          <p data-score="2"><button type="button" class="criteria-btn">2分</button>音量不穩，音調平淡，略顯單調。</p>
-          <p data-score="1"><button type="button" class="criteria-btn">1分</button>音量過小或過大，無音調變化，難以聆聽。</p>
+
+        <!-- 讀取狀態 -->
+        <div id="loadingSection" class="card text-center hidden">
+            <div class="loader mx-auto mb-4"></div>
+            <p class="text-slate-600">正在從 Google 表單載入資料...</p>
+            <p id="loadingError" class="text-red-500 text-sm mt-2 hidden"></p>
         </div>
-      </div>
-      <!-- C 類別 -->
-      <div class="rating-group" data-cat="C">
-        <label class="rating-label">
-          <span>C. 口語表達</span>
-          <span class="category-score" id="score-C">0分</span>
-        </label>
-        <p class="rating-description">評估發音清晰度、用詞精確度及流暢度。</p>
-        <div class="criteria-list">
-          <p data-score="5"><button type="button" class="criteria-btn">5分</button>遣詞精準、語言組織強，表達說服力強。</p>
-          <p data-score="4"><button type="button" class="criteria-btn">4分</button>用詞準確，語句流暢，邏輯清晰。</p>
-          <p data-score="3"><button type="button" class="criteria-btn">3分</button>表達清晰，但較平實。</p>
-          <p data-score="2"><button type="button" class="criteria-btn">2分</button>用詞不夠精確，偶有贅詞。</p>
-          <p data-score="1"><button type="button" class="criteria-btn">1分</button>表達不清，多次停頓或語無倫次。</p>
+
+        <!-- 選擇受評者區塊 -->
+        <div id="selectorSection" class="card hidden">
+            <h2 class="text-xl font-bold text-slate-800 mb-4">1. 選擇受評者</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label for="classSelector" class="block text-sm font-medium text-gray-700 mb-1">班級</label>
+                    <select id="classSelector" class="form-select w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">請選擇班級</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="seatNumberSelector" class="block text-sm font-medium text-gray-700 mb-1">座號</label>
+                    <select id="seatNumberSelector" class="form-select w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" disabled>
+                        <option value="">請先選擇班級</option>
+                    </select>
+                </div>
+            </div>
+            <button onclick="confirmStudent()" class="button-primary w-full md:w-auto">確定人選並開始評分</button>
+            <p id="selectorError" class="text-red-500 text-sm mt-2 hidden"></p>
         </div>
-      </div>
-      <!-- D 類別 -->
-      <div class="rating-group" data-cat="D">
-        <label class="rating-label">
-          <span>D. 演說內容</span>
-          <span class="category-score" id="score-D">0分</span>
-        </label>
-        <p class="rating-description">評估內容結構、邏輯及啟發性與實用性。</p>
-        <div class="criteria-list">
-          <p data-score="5"><button type="button" class="criteria-btn">5分</button>深度高、結構嚴謹，觀點新穎。</p>
-          <p data-score="4"><button type="button" class="criteria-btn">4分</button>內容充實，邏輯清晰，有思考價值。</p>
-          <p data-score="3"><button type="button" class="criteria-btn">3分</button>主題明確，深度一般。</p>
-          <p data-score="2"><button type="button" class="criteria-btn">2分</button>結構鬆散，深度不足。</p>
-          <p data-score="1"><button type="button" class="criteria-btn">1分</button>內容空洞，缺乏重點。</p>
+
+        <!-- 後續評分內容 -->
+        <div id="ratingWrapper" class="hidden">
+            <div id="studentInfoSection" class="card">
+                 <h2 class="text-xl font-bold text-slate-800 mb-4">2. 受評者資訊</h2>
+                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                     <div><p class="text-sm text-gray-500">姓名</p><p id="studentName" class="font-semibold text-lg"></p></div>
+                     <div><p class="text-sm text-gray-500">主題名稱</p><p id="topicName" class="font-semibold text-lg"></p></div>
+                     <div><p class="text-sm text-gray-500">負責工作</p><p id="studentRole" class="font-semibold text-lg"></p></div>
+                 </div>
+            </div>
+
+            <form id="ratingForm" class="card">
+                <h2 class="text-xl font-bold text-slate-800 mb-4">3. 評分項目</h2>
+                <div id="numericalRatings"></div>
+
+                <div class="mt-8">
+                    <div class="flex items-center mb-1">
+                        <label class="text-lg font-semibold text-gray-800">F. 質性回饋 (Qualitative Feedback)</label>
+                    </div>
+                    <p class="text-sm text-gray-600 mb-4">請輸入你對演說者建設性建議與友善回饋 (300字內)</p>
+                    <textarea id="feedbackText" rows="4" maxlength="300" class="w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500" placeholder="請在此輸入您的回饋..."></textarea>
+                </div>
+            </form>
+
+            <button type="button" onclick="submitScores()" class="button-submit">送出</button>
+
+            <div id="resultSection" class="card mt-6 hidden">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4 text-center">評分結果</h2>
+                
+                <div id="resultStudentInfo" class="mb-6 p-4 bg-slate-50 rounded-lg border"></div>
+
+                <div class="w-full max-w-md mx-auto mb-6">
+                    <canvas id="radarChart"></canvas>
+                </div>
+
+                <div class="text-center mb-6">
+                    <p class="text-lg text-gray-600">總分</p>
+                    <p class="text-5xl font-bold text-red-600"><span id="totalScore">0</span> / 25</p>
+                </div>
+                
+                <div id="resultFeedback" class="hidden">
+                     <h3 class="text-lg font-semibold text-gray-800 mb-2">質性回饋</h3>
+                     <p class="p-4 bg-slate-50 rounded-lg border text-gray-700 whitespace-pre-wrap"></p>
+                </div>
+            </div>
+            <p id="ratingError" class="text-red-500 text-sm text-center mt-2 hidden"></p>
         </div>
-      </div>
-      <!-- E 類別 -->
-      <div class="rating-group" data-cat="E">
-        <label class="rating-label">
-          <span>E. 簡報設計</span>
-          <span class="category-score" id="score-E">0分</span>
-        </label>
-        <p class="rating-description">評估視覺美觀度、排版與圖文搭配。</p>
-        <div class="criteria-list">
-          <p data-score="5"><button type="button" class="criteria-btn">5分</button>專業創意，強化內容。完美掌握KFC元素，完美地強化了演說內容。</p>
-          <p data-score="4"><button type="button" class="criteria-btn">4分</button>清晰美觀，有效輔助。掌握KFC元素，有效輔助內容理解。</p>
-          <p data-score="3"><button type="button" class="criteria-btn">3分</button>版面乾淨，設計一般。大致掌握KFC元素，能傳達基本資訊。</p>
-          <p data-score="2"><button type="button" class="criteria-btn">2分</button>較單調，重點不突出。較未能掌握KFC元素，視覺輔助效果有限。</p>
-          <p data-score="1"><button type="button" class="criteria-btn">1分</button>混亂，難以閱讀。無法掌握KFC元素，難以閱讀。</p>
-        </div>
-      </div>
-    </form>
-    <div class="total-score-section">
-      總分：<span id="totalScore">0</span> / 25
     </div>
-  </div>
-  <script>
-    const categories = ['A','B','C','D','E'];
-    function updateCategory(cat, val) {
-      document.getElementById(`score-${cat}`).textContent = val + '分';
-      updateTotal();
+
+<script>
+    // --- 全域變數 ---
+    let myRadarChart = null;
+    let currentStudent = null;
+    let studentData = [];
+
+    let ratingCategories = [
+        { id: 'A', title: '眼神、手勢與互動', eng: 'Eye Contact, Gestures & Interaction', desc: '評估演說者眼神交流的頻率與自信度、手勢是否自然且有助於表達，以及與觀眾的互動程度。', subtotal: 0, criteria: [ "<strong>5分：</strong>眼神自信、誠懇，能掃視全場；手勢與肢體語言精準、有感染力，與觀眾互動熱絡自然。", "<strong>4分：</strong>能與大部分觀眾保持良好眼神接觸，手勢自然且有助於表達，有意識地與觀眾互動。", "<strong>3分：</strong>有基本的眼神交流，手勢尚可，但與觀眾的連結感較弱。", "<strong>2分：</strong>眼神飄忽，僅有少量或不自然的手勢，互動嘗試非常有限。", "<strong>1分：</strong>幾乎沒有眼神交流，肢體僵硬，完全沒有與觀眾互動。" ]},
+        { id: 'B', title: '音量與音調', eng: 'Volume & Tone', desc: '評估演說者的音量是否適中且清晰，音調是否有適當的變化以吸引聽眾並傳達情感。', subtotal: 0, criteria: [ "<strong>5分：</strong>音量收放自如，音調富於變化且極具表現力，能完全吸引並感染觀眾。", "<strong>4分：</strong>音量控制得宜，能根據內容調整音調，帶有情感，能吸引聽眾。", "<strong>3分：</strong>音量適中，但音調起伏較少，情感表達不明顯。", "<strong>2分：</strong>音量時大時小，音調變化不足，聽起來有些單調。", "<strong>1分：</strong>聲音過小或過大，音調平淡無奇，難以聽清或令人不適。" ]},
+        { id: 'C', title: '口語表達', eng: 'Verbal Expression', desc: '評估演說者的發音是否清晰、用詞是否精確、語句是否流暢，以及是否有過多的贅詞。', subtotal: 0, criteria: [ "<strong>5分：</strong>遣詞用字精準且富魅力，語言組織能力強，表達極具說服力與感染力。", "<strong>4分：</strong>用詞準確，語句流暢，邏輯清晰，能有效傳達訊息。", "<strong>3分：</strong>表達清晰，語速正常，但用詞較為平實。", "<strong>2分：</strong>用詞不夠精確，偶有贅詞，流暢度有待加強。", "<strong>1分：</strong>表達不清，贅詞過多（例如：嗯、啊、然後），頻繁停頓或語無倫次。" ]},
+        { id: 'D', title: '演說內容', eng: 'Content of Speech', desc: '評估演說內容的結構是否清晰、邏輯是否嚴謹、論點是否有力，以及是否具有啟發性或實用性。', subtotal: 0, criteria: [ "<strong>5分：</strong>內容非常有深度、具啟發性且結構嚴謹，觀點獨到新穎，讓聽眾獲益匪淺。", "<strong>4分：</strong>內容充實，結構完整，邏輯清晰，論點有力，能引發聽眾思考。", "<strong>3分：</strong>主題明確，內容有基本架構，但深度或新意不足。", "<strong>2分：</strong>內容較為淺薄，結構鬆散，觀點缺乏足夠的支持。", "<strong>1分：</strong>內容空洞，結構混亂，缺乏明確主題與重點。" ]},
+        { id: 'E', title: '簡報設計', eng: 'Presentation Design', desc: '評估簡報的視覺設計是否美觀、排版是否清晰、圖文搭配是否得宜，以及是否有效輔助內容呈現。(K=關鍵字 F=字型 C=色彩)', subtotal: 0, criteria: [ "<strong>5分：</strong>設計極具專業水準與創意，視覺化效果出色，完美掌握KFC元素，完美地強化了演說內容。", "<strong>4分：</strong>設計清晰美觀，圖文搭配得宜，掌握KFC元素，有效輔助內容理解。", "<strong>3分：</strong>版面乾淨，但設計感一般，大致掌握KFC元素，能傳達基本資訊。", "<strong>2分：</strong>設計較為單調，重點不突出，較未能掌握KFC元素，視覺輔助效果有限。", "<strong>1分：</strong>版面混亂，文字過多，圖片品質差，無法掌握KFC元素，難以閱讀。" ]},
+    ];
+
+    // --- 頁面初始化 ---
+    window.onload = function() {
+        generateRatingForm();
+    };
+
+    // --- 主要功能函式 ---
+    async function startLoadingData() {
+        const urlInput = document.getElementById('googleSheetURLInput');
+        const googleSheetURL = urlInput.value.trim();
+        const urlError = document.getElementById('urlError');
+        
+        if (!googleSheetURL) {
+            urlError.textContent = '請輸入 Google Sheet 的發佈連結。';
+            urlError.classList.remove('hidden');
+            return;
+        }
+        urlError.classList.add('hidden');
+
+        document.getElementById('urlInputSection').classList.add('hidden');
+        document.getElementById('loadingSection').classList.remove('hidden');
+        
+        await loadAndInitialize(googleSheetURL);
     }
-    function updateTotal() {
-      let total = 0;
-      categories.forEach(cat => {
-        const text = document.getElementById(`score-${cat}`).textContent;
-        total += parseInt(text) || 0;
-      });
-      document.getElementById('totalScore').textContent = total;
+
+    async function loadAndInitialize(url) {
+        const loadingSection = document.getElementById('loadingSection');
+        const loadingError = document.getElementById('loadingError');
+        const selectorSection = document.getElementById('selectorSection');
+
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`網路回應錯誤: ${response.statusText}`);
+            }
+            const csvText = await response.text();
+            studentData = parseCSV(csvText);
+            initializeSelectors();
+
+            loadingSection.classList.add('hidden');
+            selectorSection.classList.remove('hidden');
+
+        } catch (error) {
+            console.error('載入資料失敗:', error);
+            loadingError.textContent = '載入資料失敗！請檢查您的網路連線以及 Google Sheet 發佈連結是否正確。';
+            loadingError.classList.remove('hidden');
+            loadingSection.querySelector('.loader').classList.add('hidden');
+            
+            // 讓使用者可以重新輸入
+            document.getElementById('urlInputSection').classList.remove('hidden');
+            document.getElementById('loadingSection').classList.add('hidden');
+        }
     }
-    document.querySelectorAll('.criteria-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const p = btn.closest('p');
-        const cat = p.closest('.rating-group').dataset.cat;
-        const score = p.getAttribute('data-score');
-        p.parentNode.querySelectorAll('.criteria-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        updateCategory(cat, score);
-      });
-    });
-  </script>
+
+    function parseCSV(text) {
+        const lines = text.trim().split(/\r?\n/);
+        const headers = lines[0].split(',').map(h => h.trim());
+        
+        const classIndex = headers.indexOf('班級');
+        const seatIndex = headers.indexOf('座號');
+        const nameIndex = headers.indexOf('姓名');
+        const topicIndex = headers.indexOf('主題名稱');
+        const roleIndex = headers.indexOf('負責工作');
+        
+        if ([classIndex, seatIndex, nameIndex, topicIndex, roleIndex].includes(-1)) {
+            throw new Error("CSV 標頭缺少必要的欄位 (班級, 座號, 姓名, 主題名稱, 負責工作)");
+        }
+
+        return lines.slice(1).map(line => {
+            const values = line.split(',');
+            return {
+                class: values[classIndex] ? values[classIndex].trim() : '',
+                seatNumber: values[seatIndex] ? parseInt(values[seatIndex].trim(), 10) : 0,
+                name: values[nameIndex] ? values[nameIndex].trim() : '',
+                topic: values[topicIndex] ? values[topicIndex].trim() : '',
+                role: values[roleIndex] ? values[roleIndex].trim() : '',
+            };
+        }).filter(s => s.name && s.class && s.seatNumber); // 過濾掉不完整的行
+    }
+
+    function initializeSelectors() {
+        const classSelector = document.getElementById('classSelector');
+        // 清空既有選項以防重複載入
+        classSelector.innerHTML = '<option value="">請選擇班級</option>';
+        const classes = [...new Set(studentData.map(s => s.class))];
+        
+        classes.forEach(c => {
+            const option = document.createElement('option');
+            option.value = c;
+            option.textContent = c;
+            classSelector.appendChild(option);
+        });
+
+        classSelector.addEventListener('change', function() {
+            updateSeatNumberOptions(this.value);
+        });
+    }
+
+    function updateSeatNumberOptions(selectedClass) {
+        const seatNumberSelector = document.getElementById('seatNumberSelector');
+        seatNumberSelector.innerHTML = '<option value="">請選擇座號</option>';
+
+        if (!selectedClass) {
+            seatNumberSelector.disabled = true;
+            return;
+        }
+
+        const studentsInClass = studentData.filter(s => s.class === selectedClass);
+        const seatNumbers = [...new Set(studentsInClass.map(s => s.seatNumber))].sort((a,b) => a-b);
+        
+        // 這邊可以根據您的需求決定座號範圍
+        const maxSeatNumber = Math.max(...studentData.map(s => s.seatNumber), 45);
+
+        for(let i = 1; i <= maxSeatNumber; i++) {
+             const option = document.createElement('option');
+             option.value = i;
+             option.textContent = i;
+             if (!seatNumbers.includes(i)) {
+                 option.disabled = true;
+             }
+             seatNumberSelector.appendChild(option);
+        }
+
+        seatNumberSelector.disabled = false;
+    }
+
+    function confirmStudent() {
+        const classVal = document.getElementById('classSelector').value;
+        const seatNumberVal = document.getElementById('seatNumberSelector').value;
+        const errorDiv = document.getElementById('selectorError');
+        
+        if (!classVal || !seatNumberVal) {
+            errorDiv.textContent = '請選擇班級和座號。';
+            errorDiv.classList.remove('hidden');
+            return;
+        }
+        errorDiv.classList.add('hidden');
+
+        const student = studentData.find(s => s.class === classVal && s.seatNumber == seatNumberVal);
+
+        if (!student) {
+            errorDiv.textContent = `在 ${classVal} 找不到座號為 ${seatNumberVal} 的學生資料。`;
+            errorDiv.classList.remove('hidden');
+            currentStudent = null;
+            return;
+        }
+        
+        currentStudent = student;
+
+        document.getElementById('studentName').textContent = student.name;
+        document.getElementById('topicName').textContent = student.topic;
+        document.getElementById('studentRole').textContent = student.role;
+
+        document.getElementById('ratingWrapper').classList.remove('hidden');
+        document.getElementById('selectorSection').classList.add('hidden');
+        document.getElementById('urlInputSection').classList.add('hidden'); // 確認後也隱藏輸入區塊
+    }
+
+    function generateRatingForm() {
+        const formContainer = document.getElementById('numericalRatings');
+        formContainer.innerHTML = ''; // 清空
+        ratingCategories.forEach(cat => {
+            const groupDiv = document.createElement('div');
+            groupDiv.className = 'mb-6';
+            groupDiv.id = `group-${cat.id}`;
+            
+            let scoreOptionsHTML = `<div class="flex gap-2 flex-wrap mb-4" data-category-id="${cat.id}">`;
+            for (let i = 1; i <= 5; i++) {
+                scoreOptionsHTML += `
+                    <label class="flex items-center p-2 border border-gray-300 rounded-md cursor-pointer bg-gray-50 hover:bg-blue-100 transition-colors">
+                        <input type="radio" name="score${cat.id}" value="${i}" class="hidden">
+                        <span class="px-2">${i}分</span>
+                    </label>
+                `;
+            }
+            scoreOptionsHTML += '</div>';
+            
+            let criteriaHTML = '<div class="text-sm text-gray-700 space-y-2 border-l-2 border-gray-200 pl-4">';
+            cat.criteria.forEach(c => {
+                criteriaHTML += `<p>${c}</p>`;
+            });
+            criteriaHTML += '</div>';
+
+            groupDiv.innerHTML = `
+                <div class="flex items-center mb-1">
+                    <label class="text-lg font-semibold text-gray-800">${cat.id}. ${cat.title} (${cat.eng})</label>
+                    <span id="subtotal-${cat.id}" class="subtotal-badge hidden">小計: 0</span>
+                </div>
+                <p class="text-sm text-gray-600 mb-4">${cat.desc}</p>
+                ${scoreOptionsHTML}
+                ${criteriaHTML}
+            `;
+            formContainer.appendChild(groupDiv);
+
+            groupDiv.querySelector('.flex.gap-2').addEventListener('click', handleScoreClick);
+        });
+    }
+    
+    function handleScoreClick(event) {
+        const label = event.target.closest('label');
+        if (!label) return;
+
+        const radio = label.querySelector('input[type="radio"]');
+        const score = parseInt(radio.value);
+        const categoryId = event.currentTarget.dataset.categoryId;
+
+        const category = ratingCategories.find(c => c.id === categoryId);
+        category.subtotal = score;
+
+        const subtotalBadge = document.getElementById(`subtotal-${categoryId}`);
+        subtotalBadge.textContent = `小計: ${score}`;
+        subtotalBadge.classList.remove('hidden');
+
+        const allLabels = event.currentTarget.querySelectorAll('label');
+        allLabels.forEach(l => l.classList.remove('score-selected'));
+        label.classList.add('score-selected');
+    }
+
+    function submitScores() {
+        let totalScore = 0;
+        let allAnswered = true;
+        const ratingErrorDiv = document.getElementById('ratingError');
+        const resultSectionDiv = document.getElementById('resultSection');
+        const feedbackText = document.getElementById('feedbackText').value;
+
+        ratingErrorDiv.classList.add('hidden');
+
+        for (const cat of ratingCategories) {
+            if (cat.subtotal === 0) {
+                allAnswered = false;
+                break;
+            }
+            totalScore += cat.subtotal;
+        }
+
+        if (!allAnswered) {
+            ratingErrorDiv.textContent = '請完成所有 A-E 項目的評分！';
+            ratingErrorDiv.classList.remove('hidden');
+            resultSectionDiv.classList.add('hidden');
+            return;
+        }
+
+        if (currentStudent) {
+            const infoContainer = document.getElementById('resultStudentInfo');
+            infoContainer.innerHTML = `
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center sm:text-left">
+                    <div><p class="text-sm text-gray-500">班級</p><p class="font-semibold">${currentStudent.class}</p></div>
+                    <div><p class="text-sm text-gray-500">座號</p><p class="font-semibold">${currentStudent.seatNumber}</p></div>
+                    <div class="mt-2 sm:mt-0"><p class="text-sm text-gray-500">姓名</p><p class="font-semibold">${currentStudent.name}</p></div>
+                    <div class="col-span-2 sm:col-span-1 mt-2 sm:mt-0"><p class="text-sm text-gray-500">主題名稱</p><p class="font-semibold">${currentStudent.topic}</p></div>
+                </div>
+            `;
+        }
+
+        const feedbackResultDiv = document.getElementById('resultFeedback');
+        if (feedbackText.trim() !== '') {
+            feedbackResultDiv.querySelector('p').textContent = feedbackText;
+            feedbackResultDiv.classList.remove('hidden');
+        } else {
+            feedbackResultDiv.classList.add('hidden');
+        }
+
+        document.getElementById('totalScore').textContent = totalScore;
+        resultSectionDiv.classList.remove('hidden');
+        
+        drawRadarChart();
+    }
+
+    function drawRadarChart() {
+        const ctx = document.getElementById('radarChart').getContext('2d');
+        const labels = ratingCategories.map(cat => `${cat.id}. ${cat.title}`);
+        const data = ratingCategories.map(cat => cat.subtotal);
+
+        if (myRadarChart) {
+            myRadarChart.destroy();
+        }
+
+        myRadarChart = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '各項評分',
+                    data: data,
+                    backgroundColor: 'rgba(220, 38, 38, 0.2)',
+                    borderColor: 'rgba(220, 38, 38, 1)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(220, 38, 38, 1)',
+                    pointBorderColor: '#fff',
+                    pointHoverBackgroundColor: '#fff',
+                    pointHoverBorderColor: 'rgba(220, 38, 38, 1)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                scales: {
+                    r: {
+                        angleLines: { display: true },
+                        suggestedMin: 0,
+                        suggestedMax: 5,
+                        pointLabels: { font: { size: 12 }, color: '#1f2937' },
+                        ticks: { stepSize: 1, backdropColor: 'rgba(255, 255, 255, 0.75)' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+
+</script>
 </body>
 </html>
